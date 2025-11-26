@@ -45,7 +45,7 @@ This poses significant technical challenges involving memory allocation, cross-p
 **GPU Memory Management Complexity**:  
 CUDA provides multiple memory management APIs. To release GPU memory while keeping processes alive, Virtual Memory Management APIs (VMM or cuMem) must be used. These APIs offer two-layer address management and dynamic mapping capabilities (see Figure 2). Modern frameworks like PyTorch and NCCL already support optional VMM-based memory allocation.
 
-![](./doc/vmm_api_ops.png)
+![](./docs/images/vmm_api_ops.png)
 
 _Figure 2: NVIDIA VMM Memory Management APIs and Typical Operations_
 
@@ -71,9 +71,9 @@ Compared to memory offloading in PyTorch/Python, transparent NCCL memory offload
 2. **Distributed P2P Memory Cross-References**: Unlike per-rank data (e.g., sharded weights, activations, KV cache), NCCL creates complex cross-rank P2P references for collective communication. Simply freeing local memory doesn’t release resources to the driver. Over multiple rounds, unreleased old buffers accumulate, causing NCCL memory usage to grow. This unique **distributed memory cross-reference problem** requires precise restoration—any mismatch risks crashes or hangs.
 3. **Complex Logic from Dynamic Connections & Hybrid Parallelism**: NCCL is hard to modify, and corner cases are numerous during validation. For example, NVIDIA’s 2024 **symmetric memory** (for NVSwitch-based high-speed collectives) introduces even more complex memory management logic (see Figure 3).
 
-![](./doc/sym_mem.webp)
+![](./docs/images/sym_mem.png)
 
-![](./doc/nv_switch.png)
+![](./docs/images/nv_switch.png)
 
 _Figure 3: NVIDIA Symmetric Memory–Related APIs_
 
@@ -91,7 +91,7 @@ AMem NCCL-Plugin leverages CUDA’s VMM APIs and employs a clean two-layer decou
 
 
 
-![](./doc/overall_arch.webp)
+![](./docs/images/overall_arch.png)
 
 _Figure 4: Overall Architecture of AMem NCCL-Plugin_
 
@@ -107,21 +107,21 @@ For co-located deployment (training + inference on the same GPU), identical virt
 
 
 
-![](./doc/p2p_mem_ref.png)
+![](./docs/images/p2p_mem_ref.png)
 
 _Figure 5: NVIDIA P2P Memory Cross-Reference and Handling (simplified multi-GPU example)_
 
 ### Guarantee 2: State Management
 AMem maintains and updates internal states for each process and NCCL memory allocation (`dptr`), ensuring completeness and real-time accuracy (Figure 6).
 
-![](./doc/process_status.webp)
+![](./docs/images/process_status.png)
 
 _Figure 6: Process and Memory State Transitions_
 
 ### Guarantee 3: Workflow Guarantee – Distributed Offload & Restore
 Using built-in UDS communication, AMem ensures correct cross-process P2P reference tracing, metadata updates, and redo execution—even in distributed settings (Figure 7). Note: Multi-rank systems are peer-to-peer; the diagram only shows rank0’s perspective for clarity.
 
-![](./doc/workflow.webp)
+![](./docs/images/workflow.png)
 
 _Figure 7: Distributed NCCL Memory Offload & Restore Workflow_
 
@@ -135,7 +135,7 @@ AMem NCCL-Plugin can **nearly fully offload NCCL-allocated GPU memory** and rest
 
 In large-scale tasks, NCCL memory overhead can reach **10–20 GB per GPU**. With AMem, restoration latency is typically **under 1 second**<sup>**4**</sup>.
 
-![](./doc/result1.webp)        ![](./doc/result2.webp)
+![](./docs/images/result1.webp)        ![](./docs/images/result2.webp)
 
 _Figure 8: AMem NCCL-Plugin nearly fully offloads NCCL memory (left/right: different GPU types)_
 
@@ -242,7 +242,7 @@ bash ./run.sh
 
 Test run example：
 
-![](./doc/run_result.webp)
+![](./docs/images/run_result.webp)
 
 ### Framework Integration
 AMem NCCL-Plugin **does not affect normal NCCL usage** but adds new APIs:
@@ -327,37 +327,4 @@ Memory management and optimization require sustained investment. For legacy-comp
 + GLake: [https://github.com/antgroup/glake](https://github.com/antgroup/glake) or ASPLOS24  [https://dl.acm.org/doi/abs/10.1145/3620665.3640423](https://dl.acm.org/doi/abs/10.1145/3620665.3640423) 
 + Zhiyi Hu, Siyuan Shen, Tommaso Bonato, Sylvain Jeaugey, Cedell Alexander, Eric Spada, James Dinan, Jeff Hammond, Torsten Hoefler.Demystifying NCCL: An In-depth Analysis of GPU Communication Protocols and Algorithms, arXiv preprint arXiv:[2507.04786](https://arxiv.org/abs/2507.04786)
 + NVIDIA. NCCL 2.27. [https://developer.nvidia.com/blog/enabling-fast-inference-and-resilient-training-with-nccl-2-27/.](https://developer.nvidia.com/blog/enabling-fast-inference-and-resilient-training-with-nccl-2-27/.)Accessed: 2025-10-10
-
-
-
-
-
-
-
-
-
-We warmly welcome every developer interested in reinforcement learning and large language models to try **AMem NCCL-Plugin** and share your valuable feedback and suggestion together, let’s drive continuous innovation in RL systems!
-
-📦 **GitHub Repository**: [<font style="color:rgb(94, 92, 230);">https://github.com/inclusionAI/asystem-amem](https://github.com/inclusionAI/asystem-amem)  
-⭐ Please feel free to **Star** and **Fork** the repo, and we’d love to see your **PRs**!
-
-
-
-
-
-Stay tuned for the latest releases from Ant Group’s **Bailing Models**:  
-🤗 **Hugging Face**: [<font style="color:rgb(94, 92, 230);">https://huggingface.co/inclusionAI](https://huggingface.co/inclusionAI)  
-🤖 **ModelScope Community**: [<font style="color:rgb(94, 92, 230);">https://www.modelscope.cn/organization/inclusionAI](https://www.modelscope.cn/organization/inclusionAI)
-
-<font style="color:rgb(94, 92, 230);">
-
-<font style="color:rgb(94, 92, 230);">
-
-The **Ant ASystem team** is also actively hiring top talent from the industry. If you’re passionate about reinforcement learning, training/inference engines, and pushing the boundaries of cutting-edge systems in a rapidly evolving world, we’d love for you to join us!
-
-Interested candidates can apply via:  
-**Ant Group – Training & Inference System R&D Expert – Hangzhou / Beijing / Shanghai**  
-[<font style="color:rgb(94, 92, 230);">https://talent.antgroup.com/off-campus-position?positionId=25052904956438&tid=0b442eeb17633881544247991e1cc0](https://talent.antgroup.com/off-campus-position?positionId=25052904956438&tid=0b442eeb17633881544247991e1cc0)
-
-Or send your resume directly to: [**<font style="color:rgb(94, 92, 230);">ASystem@service.alipay.com**](mailto:ASystem@service.alipay.com)
 
